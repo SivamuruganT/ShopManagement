@@ -4,6 +4,7 @@ const NAV_ITEMS = [
   { key: "overview", label: "Overview", icon: "🏠" },
   { key: "sales", label: "Sales Records", icon: "🧾" },
   { key: "pnl", label: "Profit & Loss", icon: "📊" },
+  { key: "inventory", label: "Inventory", icon: "📦" },
   { key: "shops", label: "Shops", icon: "🏬" },
   { key: "admins", label: "Admins", icon: "👤" }
 ];

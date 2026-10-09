@@ -86,9 +86,29 @@ const expenseSchema = new mongoose.Schema({
 });
 expenseSchema.index({ shopId: 1, createdAt: 1 });
 
+// ---------- Product (read-only stock snapshot) ----------
+// A mirror of a terminal's catalog, replaced wholesale each time a terminal
+// sends a snapshot - "latest terminal wins" per shop. Not subject to the
+// 2-year retention sweep; it's current state, not history.
+const productSchema = new mongoose.Schema({
+  shopId: { type: String, required: true },
+  sku: { type: String, required: true },
+  name: String,
+  category: String,
+  unit: String,
+  price: Number,
+  costPrice: Number,
+  stockQty: Number,
+  lowStockThreshold: Number,
+  terminalId: String,
+  syncedAt: { type: Date, default: Date.now }
+});
+productSchema.index({ shopId: 1, sku: 1 }, { unique: true });
+
 const Shop = mongoose.model("Shop", shopSchema);
 const AdminUser = mongoose.model("AdminUser", adminUserSchema);
 const Bill = mongoose.model("Bill", billSchema);
 const Expense = mongoose.model("Expense", expenseSchema);
+const Product = mongoose.model("Product", productSchema);
 
-module.exports = { connectDb, Shop, AdminUser, Bill, Expense };
+module.exports = { connectDb, Shop, AdminUser, Bill, Expense, Product };

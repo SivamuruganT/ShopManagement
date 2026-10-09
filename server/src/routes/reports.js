@@ -1,5 +1,5 @@
 const express = require("express");
-const { Shop, Bill, Expense } = require("../db");
+const { Shop, Bill, Expense, Product } = require("../db");
 const requireAdmin = require("../middleware/requireAdmin");
 
 const router = express.Router();
@@ -150,6 +150,46 @@ router.get("/pnl", async (req, res) => {
       totalExpenses,
       netProfit,
       expenseBreakdown: expenseByCategory.map((e) => ({ category: e._id, amount: e.amount }))
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Read-only stock view. Optional ?shopId=, ?search=, ?lowOnly=1
+router.get("/inventory", async (req, res) => {
+  try {
+    const match = {};
+    if (req.query.shopId) match.shopId = req.query.shopId;
+    if (req.query.search) {
+      const rx = new RegExp(String(req.query.search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      match.$or = [{ name: rx }, { sku: rx }, { category: rx }];
+    }
+    const [all, names] = await Promise.all([Product.find(match).sort({ name: 1 }).limit(5000).lean(), shopNameMap()]);
+    const rows = all.map((p) => ({
+      shopId: p.shopId,
+      shopName: names[p.shopId] || p.shopId,
+      sku: p.sku,
+      name: p.name,
+      category: p.category,
+      unit: p.unit,
+      price: p.price,
+      costPrice: p.costPrice,
+      stockQty: p.stockQty,
+      lowStockThreshold: p.lowStockThreshold,
+      status: p.stockQty <= 0 ? "out" : p.stockQty <= p.lowStockThreshold ? "low" : "ok",
+      syncedAt: p.syncedAt
+    }));
+    const filtered = req.query.lowOnly ? rows.filter((r) => r.status !== "ok") : rows;
+    res.json({
+      summary: {
+        totalProducts: rows.length,
+        lowStock: rows.filter((r) => r.status === "low").length,
+        outOfStock: rows.filter((r) => r.status === "out").length,
+        stockValue: rows.reduce((sum, r) => sum + Math.max(0, r.stockQty || 0) * (r.costPrice || 0), 0),
+        lastSyncedAt: rows.reduce((m, r) => (!m || r.syncedAt > m ? r.syncedAt : m), null)
+      },
+      rows: filtered
     });
   } catch (err) {
     res.status(400).json({ error: err.message });

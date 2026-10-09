@@ -6,6 +6,7 @@ import Overview from "./pages/Overview.jsx";
 import SalesRecords from "./pages/SalesRecords.jsx";
 import ProfitLoss from "./pages/ProfitLoss.jsx";
 import Shops from "./pages/Shops.jsx";
+import Inventory from "./pages/Inventory.jsx";
 import Admins from "./pages/Admins.jsx";
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
     overview: <Overview />,
     sales: <SalesRecords />,
     pnl: <ProfitLoss />,
+    inventory: <Inventory />,
     shops: <Shops />,
     admins: <Admins />
   };

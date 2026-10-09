@@ -1,5 +1,5 @@
 const express = require("express");
-const { Bill, Expense } = require("../db");
+const { Bill, Expense, Product } = require("../db");
 const requireShopKey = require("../middleware/requireShopKey");
 
 const router = express.Router();
@@ -12,7 +12,7 @@ const router = express.Router();
  * scheme baked into the terminal app from day one.
  */
 router.post("/batch", requireShopKey, async (req, res) => {
-  const { terminalId, bills, expenses } = req.body;
+  const { terminalId, bills, expenses, products } = req.body;
   if (!terminalId) {
     return res.status(400).json({ error: "terminalId is required." });
   }
@@ -71,7 +71,37 @@ router.post("/batch", requireShopKey, async (req, res) => {
     }
   }
 
-  res.json({ acceptedBillKeys, acceptedExpenseKeys });
+  // Stock snapshot: make this shop's product list match the terminal's.
+  let productsAccepted = false;
+  if (Array.isArray(products)) {
+    const shopId = req.shop.shopId;
+    const now = new Date();
+    const clean = products.filter((p) => p && p.sku);
+    const ops = clean.map((p) => ({
+      updateOne: {
+        filter: { shopId, sku: String(p.sku) },
+        update: {
+          $set: {
+            name: p.name,
+            category: p.category,
+            unit: p.unit,
+            price: p.price,
+            costPrice: p.costPrice,
+            stockQty: p.stockQty,
+            lowStockThreshold: p.lowStockThreshold,
+            terminalId,
+            syncedAt: now
+          }
+        },
+        upsert: true
+      }
+    }));
+    ops.push({ deleteMany: { filter: { shopId, sku: { $nin: clean.map((p) => String(p.sku)) } } } });
+    await Product.bulkWrite(ops, { ordered: true });
+    productsAccepted = true;
+  }
+
+  res.json({ acceptedBillKeys, acceptedExpenseKeys, productsAccepted });
 });
 
 module.exports = router;
