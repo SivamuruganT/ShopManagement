@@ -4,6 +4,7 @@ const cors = require("cors");
 const path = require("path");
 const { connectDb } = require("./db");
 const { scheduleRetentionJob } = require("./jobs/retention");
+const { startKeepAlive } = require("./jobs/keepAlive");
 
 const authRoutes = require("./routes/auth");
 const syncRoutes = require("./routes/sync");
@@ -46,7 +47,10 @@ async function start() {
   }
   await connectDb(process.env.MONGODB_URI);
   scheduleRetentionJob();
-  app.listen(PORT, () => console.log(`ECBill cloud server listening on port ${PORT}`));
+  app.listen(PORT, () => {
+    console.log(`ECBill cloud server listening on port ${PORT}`);
+    startKeepAlive();
+  });
 }
 
 start();
