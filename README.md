@@ -20,10 +20,7 @@ different piece of work from this phase.
 
 1. Create a free account at mongodb.com/cloud/atlas, create a free (M0) cluster.
 2. Database Access → add a database user with a password.
-3. Network Access → add `0.0.0.0/0` (allow from anywhere) — Render's IPs aren't static,
-   so this is the simplest option for a small deployment. If you want to lock it down
-   later, Render's paid tiers support static outbound IPs.
-4. Connect → Drivers → copy the connection string. It looks like:
+3. Connect → Drivers → copy the connection string. It looks like:
    `mongodb+srv://<user>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority`
    Add a database name before the `?`, e.g. `.../ecbill?retryWrites=true...`
 
